@@ -7,10 +7,25 @@ format: html
 ```{r}
 library(tidyverse) 
 library(randomForest)
+library(sf)
+```
+
+
+
+
+
+
+```{r}
+
 
 water <- read_csv("data/water_train.csv") |> 
   mutate(status_id = factor(status_id)) 
 water_test <- read_csv("data/water_test.csv") 
+
+```
+
+```{r}
+#| eval: false
 
 rf_fit <- randomForest(status_id ~ ., data = water[,-1], 
   importance = TRUE) 
@@ -22,9 +37,8 @@ water_ts_pred <- water_test |>
     type="response")) 
 write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions1.csv")
 ```
-```{r}
-water
-```
+
+
 
 ```{r}
 
@@ -38,5 +52,29 @@ ggplot(data = total_counts,aes(x = status_id,y = Water_presence)) +
 ggplot(data = water,aes(y = water_tech_category,fill = status_id)) + 
   geom_bar(position = "fill") + theme_classic() + scale_fill_brewer(palette = "Pastel1")
 ```
+
+
+```{r}
+# Sample data for demonstration
+# You should replace this with your own dataset
+# Example data with latitude and longitude
+
+
+my_sf <- read_sf("data/Africa_Boundaries.shp")
+
+
+
+# Plot it
+library(ggplot2)
+ggplot(my_sf) +
+  geom_sf(fill = "cornsilk", color = "black") +
+  geom_point(data = water %>% filter(status_id == "n"), aes(color = status_id,x = lon, y = lat),shape = 2, size = 3,alpha = 0.4) +
+  theme_minimal() +
+  theme_void() + coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
+
+```
+
+
+
 
 
