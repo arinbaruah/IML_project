@@ -1,0 +1,42 @@
+---
+title: "Maji Safi analysis"
+author: "Arindom Baruah"
+format: html
+---
+
+```{r}
+library(tidyverse) 
+library(randomForest)
+
+water <- read_csv("data/water_train.csv") |> 
+  mutate(status_id = factor(status_id)) 
+water_test <- read_csv("data/water_test.csv") 
+
+rf_fit <- randomForest(status_id ~ ., data = water[,-1], 
+  importance = TRUE) 
+
+rf_fit 
+water_ts_pred <- water_test |> 
+  bind_cols(predict(rf_fit, newdata=water_test, type="prob")) |> 
+  mutate(pstatus_id = predict(rf_fit, newdata=water_test, 
+    type="response")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions1.csv")
+```
+```{r}
+water
+```
+
+```{r}
+
+total_counts <- water %>% group_by(water_tech_category,status_id) %>% summarise(Water_presence = n())
+
+ggplot(data = total_counts,aes(x = status_id,y = Water_presence)) + 
+  geom_col() + facet_wrap(~water_tech_category) + geom_label(aes(label = Water_presence)) + theme_classic()
+```
+
+```{r}
+ggplot(data = water,aes(y = water_tech_category,fill = status_id)) + 
+  geom_bar(position = "fill") + theme_classic() + scale_fill_brewer(palette = "Pastel1")
+```
+
+
