@@ -8,6 +8,8 @@ format: html
 library(tidyverse) 
 library(randomForest)
 library(sf)
+library(rnaturalearth)
+library(ggplot2)
 ```
 
 
@@ -62,19 +64,75 @@ ggplot(data = water,aes(y = water_tech_category,fill = status_id)) +
 
 my_sf <- read_sf("data/Africa_Boundaries.shp")
 
-
-
-# Plot it
-library(ggplot2)
 ggplot(my_sf) +
   geom_sf(fill = "cornsilk", color = "black") +
-  geom_point(data = water %>% filter(status_id == "n"), aes(color = status_id,x = lon, y = lat),shape = 2, size = 3,alpha = 0.4) +
+  geom_point(data = water, aes(x = lon, y = lat,color = status_id,shape = status_id), size = 3,alpha=0.2) +
   theme_minimal() +
   theme_void() + coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
 
 ```
 
+```{r}
+
+ggplot(my_sf) +
+  geom_sf(fill = "cornsilk", color = "black") +
+  geom_point(data = water %>% filter(status_id == "y"), aes(x = lon, y = lat),shape = 2, size = 3,alpha = 0.1,color = "blue") +
+  theme_minimal() +
+  theme_void() + coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
+```
 
 
 
+```{r}
+
+water_tech_long <- water %>% pivot_longer( 
+                                          cols = distance_to_primary_road:distance_to_town,
+                                          names_to = "distance_type",
+                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance))
+
+ggplot(data = water_tech_long,aes(y = distance_type , x = distance )) + geom_boxplot() + facet_grid(~water_tech_category)
+```
+
+```{r}
+water_timeline <- water %>% group_by(year(report_date),status_id) %>% summarise(Reports = n())
+```
+
+```{r}
+water_timeline_score <- water %>% group_by(report_date,water_tech_category) %>% summarise(Median_staleness = median(staleness_score),
+                                                                                              Median_crucialness =  median(crucialness_score),
+                                                                                              Median_pressure = median(pressure_score))
+
+water_timeline_score_long <- water_timeline_score %>% pivot_longer(cols = Median_staleness: Median_pressure,names_to = "Score_type",values_to = "Score")
+
+ggplot(data =water_timeline_score_long,aes(x = report_date,y = Score)) + geom_line() + facet_grid(Score_type~water_tech_category)
+```
+In the WPDX water data, the "staleness score" typically refers to the freshness or recency of the data. It is an indicator of how recent the data entry or update was made for a particular water point.
+
+
+
+```{r}
+ggplot(data = water, aes(water_point_population)) + geom_boxplot() + facet_grid(pay~is_urban)
+
+ggplot(data = water, aes(local_population_1km)) + geom_boxplot() + facet_grid(pay~is_urban)
+```
+
+
+In the WPDX (Water Point Data Exchange) data, the "water point population" typically refers to the number of people served or benefiting from a particular water point. This metric provides an estimate of the population that relies on the water point for access to clean water.
+
+Water point population data is crucial for assessing the impact of water projects, planning for future infrastructure development, and allocating resources effectively to ensure adequate access to clean water for communities.
+
+The water point population can vary depending on factors such as the size of the community served by the water point, the distance to alternative water sources, and the reliability and capacity of the water point infrastructure.
+
+To understand the water point population in WPDX data, you would typically refer to the documentation or metadata provided by WPDX, which should describe how the water point population is recorded and what it represents in the context of the dataset. If you have access to the dataset, you can also examine the structure and content of the data to identify the water point population field or variable and its values.
+
+
+```{r}
+ggplot(data = water, aes(local_population_1km)) + geom_boxplot() + facet_grid(water_tech_category~is_urban)
+```
+
+```{r}
+tech_installs <- water %>% filter(install_year < 2024) %>% group_by(install_year,water_tech_category,status_id) %>% summarise(Total_installed = n()) 
+
+ggplot(data = tech_installs,aes(x = install_year,y = Total_installed,color = status_id)) + geom_line() + facet_wrap(~water_tech_category)
+```
 
