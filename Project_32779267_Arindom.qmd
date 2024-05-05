@@ -56,7 +56,7 @@ ggplot(data = total_counts,aes(x = status_id,y = Water_presence)) +
 water_label <- water %>% group_by(water_tech_category) %>% count(status_id) %>% mutate(pct = paste0((round(n/sum(n)*100, 2))," %"))
 
 ggplot(data = water_label,aes(y = water_tech_category,x = n,fill = status_id)) + 
-  geom_col(position = "fill") + 
+  geom_col(position = "fill",color = "black") + 
   geom_text(aes(label = pct), position = position_fill(vjust = 0.5))
 ```
 
