@@ -10,6 +10,7 @@ library(randomForest)
 library(sf)
 library(rnaturalearth)
 library(ggplot2)
+library(plotly)
 ```
 
 
@@ -51,8 +52,12 @@ ggplot(data = total_counts,aes(x = status_id,y = Water_presence)) +
 ```
 
 ```{r}
-ggplot(data = water,aes(y = water_tech_category,fill = status_id)) + 
-  geom_bar(position = "fill") + theme_classic() + scale_fill_brewer(palette = "Pastel1")
+
+water_label <- water %>% group_by(water_tech_category) %>% count(status_id) %>% mutate(pct = paste0((round(n/sum(n)*100, 2))," %"))
+
+ggplot(data = water_label,aes(y = water_tech_category,x = n,fill = status_id)) + 
+  geom_col(position = "fill") + 
+  geom_text(aes(label = pct), position = position_fill(vjust = 0.5))
 ```
 
 
@@ -133,6 +138,22 @@ ggplot(data = water, aes(local_population_1km)) + geom_boxplot() + facet_grid(wa
 ```{r}
 tech_installs <- water %>% filter(install_year < 2024) %>% group_by(install_year,water_tech_category,status_id) %>% summarise(Total_installed = n()) 
 
-ggplot(data = tech_installs,aes(x = install_year,y = Total_installed,color = status_id)) + geom_line() + facet_wrap(~water_tech_category)
+ggplotly(ggplot(data = tech_installs,aes(x = install_year,y = Total_installed,color = status_id)) + geom_line() + facet_wrap(status_id~water_tech_category))
+```
+```{r}
+water_success_rate <- water %>% count(water_tech_category,status_id) %>%
+  group_by(water_tech_category) %>% mutate(Success_rate = n[status_id=="y"]/sum(n)) |>
+  summarise(Success_rate = mean(Success_rate)) |>
+  select(water_tech_category,Success_rate) %>% kbl()
+
+water_success_rate
+```
+
+```{r}
+reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise(median(water_point_population),
+                                                                           median(local_population_1km)) %>% 
+  pivot_longer(cols = "median(water_point_population)":"median(local_population_1km)",names_to = "population_type",values_to = "population_reach")
+
+ggplot(data = reach,aes(x = `year(report_date)`,y = population_reach,color = status_id)) + geom_line(alpha=0.4) + geom_point() + facet_wrap(population_type ~ water_tech_category) 
 ```
 
