@@ -14,6 +14,31 @@ library(plotly)
 ```
 
 
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+library(kableExtra)
+library(ggfortify)
+library(plotly)
+library(discrim)
+library(viridis)
+library(yardstick)
+library(rpart)
+library(rpart.plot)
+library(vip)
+library(caret)
+library(GGally)
+library(detourr)
+library(crosstalk)
+```
+
+
 
 
 
@@ -35,7 +60,7 @@ rf_fit <- randomForest(status_id ~ ., data = water[,-1],
 
 rf_fit 
 water_ts_pred <- water_test |> 
-  bind_cols(predict(rf_fit, newdata=water_test, type="prob")) |> 
+  bind_cols(predict(rf_fit, newdata=water_test, type = "prob")) |> 
   mutate(pstatus_id = predict(rf_fit, newdata=water_test, 
     type="response")) 
 write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions1.csv")
@@ -140,14 +165,7 @@ tech_installs <- water %>% filter(install_year < 2024) %>% group_by(install_year
 
 ggplotly(ggplot(data = tech_installs,aes(x = install_year,y = Total_installed,color = status_id)) + geom_line() + facet_wrap(status_id~water_tech_category))
 ```
-```{r}
-water_success_rate <- water %>% count(water_tech_category,status_id) %>%
-  group_by(water_tech_category) %>% mutate(Success_rate = n[status_id=="y"]/sum(n)) |>
-  summarise(Success_rate = mean(Success_rate)) |>
-  select(water_tech_category,Success_rate) %>% kbl()
 
-water_success_rate
-```
 
 ```{r}
 reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise(median(water_point_population),
@@ -155,5 +173,43 @@ reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>%
   pivot_longer(cols = "median(water_point_population)":"median(local_population_1km)",names_to = "population_type",values_to = "population_reach")
 
 ggplot(data = reach,aes(x = `year(report_date)`,y = population_reach,color = status_id)) + geom_line(alpha=0.4) + geom_point() + facet_wrap(population_type ~ water_tech_category) 
+```
+
+
+
+
+
+
+
+```{r}
+#| echo: true
+
+xgb_spec <- boost_tree(min_n = 4) |>
+  set_mode("classification") |>
+  set_engine("xgboost")
+p_fit_xgb <- xgb_spec |> 
+  fit(status_id ~ ., data = water %>% select(-ID))
+
+```
+
+
+```{r}
+
+water_ts_pred <- water_test |> 
+  bind_cols(predict(p_fit_xgb, new_data=water_test, type="prob")) |> 
+  mutate(pstatus_id = if_else(.pred_n >=0.5,"n","y")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions3.csv")
+
+```
+
+```{r}
+rf_fit <- randomForest(status_id ~ ., data = water[,-1], 
+  importance = TRUE)
+
+water_ts_pred <- water_test |> 
+  bind_cols(predict(rf_fit, newdata=water_test, type="prob")) |> 
+  mutate(pstatus_id = predict(rf_fit, newdata=water_test, 
+    type="response")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions1.csv")
 ```
 

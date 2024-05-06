@@ -1,0 +1,224 @@
+---
+title: "ML_project"
+author: "Aishwarya Anil Kumar"
+date: "2024-05-06"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(rpart)
+library(rpart.plot)
+library(parsnip)
+library(discrim)
+library(knitr)
+library(kableExtra)
+library(yardstick)
+library(GGally)
+library(crosstalk)
+library(detourr)
+library(tourr)
+library(plotly)
+library(vip)
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+
+sample_data <- read_csv("data/sample_submission.csv")
+water_train <- read_csv("data/water_train.csv")
+water_test <- read_csv("data/water_test.csv")
+
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# Transforming Variables to be Numerical
+
+# Drop the report_date variable
+water_train <- water_train %>% select(-report_date)
+
+# Water Tech Category
+# Remove the ID column from water_train
+water_train <- water_train[-1]  # Assuming the ID column is the first column
+
+# Perform one-hot encoding
+#water_tech_dummies <- model.matrix(~ water_tech_category - 1, data = water_train)
+
+# Combine dummy variables with the original dataset
+#water_train <- cbind(water_train, water_tech_dummies)
+
+
+# Drop the original water_tech_category variable
+water_train <-  water_train %>% select(-water_tech_category)
+
+# Is Urban
+# Convert is_urban to numerical (0 or 1)
+water_train$is_urban <- as.numeric(water_train$is_urban)
+
+# Pay
+# Convert pay to numerical (0 or 1)
+water_train$pay <- ifelse(water_train$pay == "yes", 1, 0)
+
+```
+
+```{r}
+# Do standardisation on everything except ID 
+set.seed(1148)
+
+water_train <- water_train %>% mutate(status_id = factor(status_id))
+
+water_std <- water_train %>%
+  mutate_at(vars(-1), ~ if(is.numeric(.)) (.-mean(.))/sd(.) else .)
+
+
+water_split <- initial_split(water_std, 2/3, 
+                             strata = status_id)
+
+water_tr <- training(water_split)
+
+water_ts <- testing(water_split)
+```
+
+```{r warning=FALSE, message=FALSE}
+tune_spec <- 
+  decision_tree(
+    cost_complexity = tune(),
+    tree_depth = tune(),
+    min_n = tune() 
+  ) %>% 
+  set_engine("rpart") %>% 
+  set_mode("classification")
+
+tune_spec
+```
+
+
+
+```{r warning=FALSE, message=FALSE}
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          min_n(),
+                          levels = 5)
+tree_grid
+```
+
+```{r warning=FALSE, message=FALSE}
+tree_grid %>% 
+  count(tree_depth)
+
+```
+```{r warning=FALSE, message=FALSE}
+
+
+water_folds <- vfold_cv(water_tr)
+water_folds
+```
+
+```{r warning=FALSE, message=FALSE,eval=FALSE}
+
+tree_wf <- workflow() %>%
+  add_model(tune_spec) %>%
+  add_formula(status_id ~ .)
+
+tree_res <- 
+  tree_wf %>% 
+  tune_grid(
+    resamples = water_folds,
+    grid = tree_grid
+    )
+
+tree_res
+
+```
+
+
+
+```{r  warning=FALSE, message=FALSE}
+tree_res %>% 
+  collect_metrics()
+```
+
+```{r warning=FALSE, message=FALSE}
+#| label: fig-tune1
+#| fig-cap: Visualizing the tree results
+tree_res %>%
+  collect_metrics() %>%
+  mutate(tree_depth = factor(tree_depth)) %>%
+  ggplot(aes(cost_complexity, mean, color = tree_depth)) +
+  geom_line(linewidth = 1.5, alpha = 0.6) +
+  geom_point(size = 2) +
+  facet_wrap(~ .metric + min_n, scales = "free", nrow = 2) +
+  scale_x_log10(labels = scales::label_number()) +
+  scale_color_viridis_d(option = "plasma", begin = .9, end = 0)
+```
+
+```{r warning=FALSE, message=FALSE}
+tree_res %>%
+  show_best(metric = "accuracy")
+```
+
+Finding the best tree:
+
+```{r warning=FALSE, message=FALSE}
+best_tree <- tree_res %>%
+  select_best(metric = "accuracy")
+
+best_tree
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+final_wf <- 
+  tree_wf %>% 
+  finalize_workflow(best_tree)
+
+final_wf
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+final_fit <- 
+  final_wf %>%
+  last_fit(water_split)
+```
+
+#### Summarise the fit
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+#| label: tbl-bestacc
+#| tbl-cap: "summarise the fit of the best tree model"
+final_fit %>%
+  collect_metrics() %>% kbl()
+```
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+#| label: fig-bestroc
+#| fig-cap: "ROC of the best tree model fit"
+final_fit %>%
+  collect_predictions() 
+#%>% 
+#  roc_curve(status_id, .pred_birdsongs) %>% 
+#  autoplot()
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+final_tree <- extract_workflow(final_fit)
+final_tree
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+#| label: fig-var
+#| fig-cap: Variable importance in the model
+
+final_tree %>% 
+  extract_fit_parsnip() %>% 
+  vip()
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+final_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+```
+
+
