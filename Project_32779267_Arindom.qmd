@@ -113,15 +113,7 @@ ggplot(my_sf) +
 
 
 
-```{r}
 
-water_tech_long <- water %>% pivot_longer( 
-                                          cols = distance_to_primary_road:distance_to_town,
-                                          names_to = "distance_type",
-                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance))
-
-ggplot(data = water_tech_long,aes(y = distance_type , x = distance )) + geom_boxplot() + facet_grid(~water_tech_category)
-```
 
 ```{r}
 water_timeline <- water %>% group_by(year(report_date),status_id) %>% summarise(Reports = n())
@@ -157,7 +149,7 @@ To understand the water point population in WPDX data, you would typically refer
 
 
 ```{r}
-ggplot(data = water, aes(local_population_1km)) + geom_boxplot() + facet_grid(water_tech_category~is_urban)
+ggplot(data = water, aes(local_population_1km)) + geom_boxplot() + facet_grid(water_tech_category~is_urban,scales = "free_x")
 ```
 
 ```{r}
@@ -174,8 +166,36 @@ reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>%
 
 ggplot(data = reach,aes(x = `year(report_date)`,y = population_reach,color = status_id)) + geom_line(alpha=0.4) + geom_point() + facet_wrap(population_type ~ water_tech_category) 
 ```
+```{r}
+
+water_tech_long <- water %>% filter(year(report_date) >=2018) %>% pivot_longer( 
+                                          cols = distance_to_primary_road:distance_to_town,
+                                          names_to = "distance_type",
+                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance))
+
+ggplot(data = water_tech_long,aes(y = distance_type , x = distance )) + geom_boxplot() + facet_grid(~water_tech_category)
+```
+
+```{r}
+
+water_tech_long <- water %>% filter(year(report_date) < 2018) %>% pivot_longer( 
+                                          cols = distance_to_primary_road:distance_to_town,
+                                          names_to = "distance_type",
+                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance))
+
+ggplot(data = water_tech_long,aes(y = distance_type , x = distance )) + geom_boxplot() + facet_grid(~water_tech_category)
+```
 
 
+```{r}
+ggplot(data = water %>% filter(year(report_date) >= 2014), aes(local_population_1km)) + geom_boxplot() + 
+  facet_grid(water_tech_category~is_urban,scales = "free_x")
+```
+
+```{r}
+ggplot(data = water, aes(local_population_1km)) + geom_boxplot() + 
+  facet_wrap(water_tech_category~pay,ncol=1)
+```
 
 
 
