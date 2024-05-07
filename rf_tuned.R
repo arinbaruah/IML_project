@@ -1,3 +1,16 @@
+library(vip)
+library(tidymodels)
+library(rsample)
+library(recipes)
+library(parsnip)
+library(tune)
+library(dials)
+library(workflows)
+library(yardstick)
+
+
+water <- read_csv("data/water_train.csv")
+water_test <- read_csv("data/water_test.csv")
 
 
 tune_spec <- rand_forest(
@@ -15,10 +28,7 @@ tune_spec <- rand_forest(
 
 tune_wf <- workflow() %>%
   add_model(tune_spec) %>%
-  add_formula(status_id~.)
-
-
-
+  add_formula(as.factor(status_id)~.)
 
 
 rf_grid <- grid_regular(
@@ -29,14 +39,10 @@ rf_grid <- grid_regular(
 
 rf_grid
 
-
-
-
 set.seed(1148)
 
 water$report_date <- year(water$report_date)
-cell_folds <- vfold_cv(water[,-1],v = 5) # Use the selection of variables in water dataset
-
+rf_folds <- vfold_cv(water[,-1],v = 5) # Use the selection of variables in water dataset
 
 
 
@@ -44,13 +50,13 @@ cell_folds <- vfold_cv(water[,-1],v = 5) # Use the selection of variables in wat
 doParallel::registerDoParallel()
 set.seed(1148)
 
-
-rf_res <- 
-  tune_wf %>% 
-  tune_grid(
-    resamples = cell_folds,
-    grid = 20
+rf_res <- tune_grid(
+    tune_wf,
+    resamples = rf_folds,
+    grid = rf_grid
   )
+rf_res
+
 
 
 rf_res %>% 
@@ -74,8 +80,6 @@ final_rf
 
 rf_fit_tune <- final_rf %>%
   fit(status_id~.,data = water[,-1]) # Use the selection of variables in water dataset
-
-
 
 
 

@@ -9,9 +9,13 @@ library(workflows)
 library(yardstick)
 
 
+water <- read_csv("data/water_train.csv")
+water_test <- read_csv("data/water_test.csv")
+
+
 # preprocessing "recipe"
 preprocessing_recipe <- 
-  recipes::recipe(status_id ~ ., data = water[,-1]) %>%
+  recipes::recipe(status_id ~ ., data = water[,-1]) %>% # Choose the combination of variables
   # convert categorical variables to factors
   recipes::step_string2factor(all_nominal()) %>%
   # combine low frequency factor levels
