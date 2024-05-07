@@ -11,6 +11,7 @@ library(sf)
 library(rnaturalearth)
 library(ggplot2)
 library(plotly)
+library(tidymodels)
 ```
 
 
@@ -45,7 +46,7 @@ library(crosstalk)
 
 ```{r}
 
-
+set.seed(1148)
 water <- read_csv("data/water_train.csv") |> 
   mutate(status_id = factor(status_id)) 
 water_test <- read_csv("data/water_test.csv") 
@@ -231,5 +232,230 @@ water_ts_pred <- water_test |>
   mutate(pstatus_id = predict(rf_fit, newdata=water_test, 
     type="response")) 
 write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions1.csv")
+```
+____________
+
+
+# Tune Random Forest model
+
+```{r}
+
+tune_spec <- rand_forest(
+  mtry = tune(),
+  trees = 500,
+  min_n = tune()
+) %>%
+  set_mode("classification") %>%
+  set_engine("ranger")
+
+
+```
+
+
+```{r}
+tune_wf <- workflow() %>%
+  add_model(tune_spec) %>%
+  add_formula(status_id~.)
+```
+
+
+
+```{r}
+rf_grid <- grid_regular(
+  mtry(range = c(10, 30)),
+  min_n(range = c(5, 8)),
+  levels = 5
+)
+
+rf_grid
+```
+```{r}
+set.seed(1148)
+
+water$report_date <- year(water$report_date)
+cell_folds <- vfold_cv(water[,-1],v = 5)
+```
+
+
+```{r}
+#| echo: true
+
+
+doParallel::registerDoParallel()
+set.seed(1148)
+
+
+rf_res <- 
+  tune_wf %>% 
+  tune_grid(
+    resamples = cell_folds,
+    grid = 20
+    )
+```
+
+```{r}
+library(kableExtra)
+rf_res %>% 
+  collect_metrics() %>% head() %>% kbl()
+```
+
+
+```{r}
+best_acc <- select_best(rf_res, "accuracy")
+
+final_rf <- finalize_model(
+  tune_spec,
+  best_acc
+)
+
+final_rf
+```
+
+```{r}
+rf_fit_tune <- final_rf %>%
+  fit(status_id~.,data = water[,-1])
+```
+
+
+```{r}
+
+water_test$report_date <- year(water_test$report_date)
+
+water_ts_pred <- water_test |> 
+  bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
+  mutate(pstatus_id = if_else(.pred_n >=0.5,"n","y")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions7.csv")
+```
+
+
+
+
+
+------------------------
+
+
+
+```{r}
+library(doParallel)
+all_cores <- parallel::detectCores(logical = FALSE)
+registerDoParallel(cores = all_cores)
+
+```
+```{r}
+library(rsample)
+library(recipes)
+library(parsnip)
+library(tune)
+library(dials)
+library(workflows)
+library(yardstick)
+```
+
+```{r}
+# preprocessing "recipe"
+preprocessing_recipe <- 
+  recipes::recipe(status_id ~ ., data = water[,-1]) %>%
+  # convert categorical variables to factors
+  recipes::step_string2factor(all_nominal()) %>%
+  # combine low frequency factor levels
+  recipes::step_other(all_nominal(), threshold = 0.01) %>%
+  # remove no variance predictors which provide no predictive information 
+  recipes::step_nzv(all_nominal()) %>%
+  prep()
+```
+
+
+```{r}
+xgb_spec <- boost_tree(
+  trees = 1000,
+  tree_depth = tune(), min_n = tune(),
+  loss_reduction = tune(),                     ## first three: model complexity
+  sample_size = tune(), mtry = tune(),         ## randomness
+  learn_rate = tune()                          ## step size
+) %>%
+  set_engine("xgboost") %>%
+  set_mode("classification")
+
+xgb_spec
+```
+
+
+```{r}
+xgb_grid <- grid_latin_hypercube(
+  tree_depth(),
+  min_n(),
+  loss_reduction(),
+  sample_size = sample_prop(),
+  finalize(mtry(), water[,-1]),
+  learn_rate(),
+  size = 30
+)
+```
+
+
+```{r}
+xgb_wf <- workflow() %>%
+  add_formula(status_id ~ .) %>%
+  add_model(xgb_spec)
+
+xgb_wf
+```
+
+```{r}
+set.seed(1148)
+vb_folds <- vfold_cv(water[,-1], strata = status_id,v=5)
+
+vb_folds
+```
+
+```{r}
+doParallel::registerDoParallel()
+
+set.seed(1148)
+xgb_res <- tune_grid(
+  xgb_wf,
+  resamples = vb_folds,
+  grid = xgb_grid,
+  control = control_grid(save_pred = TRUE,verbose = TRUE)
+)
+
+xgb_res
+```
+
+```{r}
+show_best(xgb_res, "accuracy")
+
+best_acc<- select_best(xgb_res, "accuracy")
+best_acc
+```
+
+```{r}
+final_xgb <- finalize_workflow(
+  xgb_wf,
+  best_acc
+)
+
+final_xgb
+```
+```{r}
+library(vip)
+
+final_xgb %>%
+  fit(data = water[,-1]) %>%
+  pull_workflow_fit() %>%
+  vip(geom = "point")
+```
+```{r}
+
+xgb_fit_tune <- final_xgb %>%
+  fit(data = water[,-1])
+```
+
+```{r}
+water_ts_pred <- water_test |> 
+  bind_cols(predict(xgb_fit_tune, new_data=water_test, type="prob")) |> 
+  mutate(pstatus_id = if_else(.pred_n >=0.35,"n","y")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions6.csv")
+
 ```
 
