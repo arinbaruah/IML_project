@@ -240,6 +240,21 @@ ____________
 
 ```{r}
 
+set.seed(1148)
+water <- read_csv("data/water_train.csv") |> 
+  mutate(status_id = factor(status_id)) 
+water_test <- read_csv("data/water_test.csv") 
+
+```
+
+```{r}
+water <- water %>% select(-is_urban,pressure_score,lat,lon,report_date)
+water_test <- water_test %>% select(-is_urban,water_point_population,lat,lon,report_date)
+```
+
+
+```{r}
+
 tune_spec <- rand_forest(
   mtry = tune(),
   trees = 500,
@@ -262,8 +277,8 @@ tune_wf <- workflow() %>%
 
 ```{r}
 rf_grid <- grid_regular(
-  mtry(range = c(10, 30)),
-  min_n(range = c(5, 8)),
+  mtry(range = c(5, 30)),
+  min_n(range = c(2, 8)),
   levels = 5
 )
 
@@ -289,7 +304,7 @@ rf_res <-
   tune_wf %>% 
   tune_grid(
     resamples = cell_folds,
-    grid = 20
+    grid = rf_grid
     )
 ```
 
@@ -323,8 +338,8 @@ water_test$report_date <- year(water_test$report_date)
 
 water_ts_pred <- water_test |> 
   bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
-  mutate(pstatus_id = if_else(.pred_n >=0.5,"n","y")) 
-write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions7.csv")
+  mutate(pstatus_id = if_else(.pred_n >=0.35,"n","y")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions10.csv")
 ```
 
 
@@ -450,6 +465,9 @@ final_xgb %>%
 xgb_fit_tune <- final_xgb %>%
   fit(data = water[,-1])
 ```
+
+
+
 
 ```{r}
 water_ts_pred <- water_test |> 
