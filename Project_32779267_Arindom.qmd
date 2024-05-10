@@ -37,6 +37,7 @@ library(caret)
 library(GGally)
 library(detourr)
 library(crosstalk)
+library(ranger)
 ```
 
 
@@ -248,8 +249,8 @@ water_test <- read_csv("data/water_test.csv")
 ```
 
 ```{r}
-water <- water %>% select(-is_urban,pressure_score,lat,lon,report_date)
-water_test <- water_test %>% select(-is_urban,water_point_population,lat,lon,report_date)
+water <- water %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road)
+water_test <- water_test %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road)
 ```
 
 
@@ -257,7 +258,7 @@ water_test <- water_test %>% select(-is_urban,water_point_population,lat,lon,rep
 
 tune_spec <- rand_forest(
   mtry = tune(),
-  trees = 500,
+  trees = 1000,
   min_n = tune()
 ) %>%
   set_mode("classification") %>%
@@ -295,7 +296,6 @@ cell_folds <- vfold_cv(water[,-1],v = 5)
 ```{r}
 #| echo: true
 
-
 doParallel::registerDoParallel()
 set.seed(1148)
 
@@ -316,7 +316,7 @@ rf_res %>%
 
 
 ```{r}
-best_acc <- select_best(rf_res, "accuracy")
+best_acc <- select_best(rf_res,metric = "accuracy")
 
 final_rf <- finalize_model(
   tune_spec,
@@ -326,7 +326,11 @@ final_rf <- finalize_model(
 final_rf
 ```
 
+
+
 ```{r}
+water$report_date <- year(water$report_date)
+
 rf_fit_tune <- final_rf %>%
   fit(status_id~.,data = water[,-1])
 ```
@@ -338,8 +342,8 @@ water_test$report_date <- year(water_test$report_date)
 
 water_ts_pred <- water_test |> 
   bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
-  mutate(pstatus_id = if_else(.pred_n >=0.35,"n","y")) 
-write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions10.csv")
+  mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions14.csv")
 ```
 
 
