@@ -247,10 +247,17 @@ water <- read_csv("data/water_train.csv") |>
 water_test <- read_csv("data/water_test.csv") 
 
 ```
+```{r}
+water <- water %>% select(-c(is_urban,water_point_population,local_population_1km,distance_to_primary_road,distance_to_tertiary_road,staleness_score))
+```
+
 
 ```{r}
-water <- water %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road)
-water_test <- water_test %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road)
+
+water <- water %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road,distance_to_tertiary_road,staleness_score)
+water_test <- water_test %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road,distance_to_tertiary_road,staleness_score)
+
+water <- water %>% filter(install_year < 2024)
 ```
 
 
@@ -343,7 +350,7 @@ water_test$report_date <- year(water_test$report_date)
 water_ts_pred <- water_test |> 
   bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
   mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
-write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions14.csv")
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions18.csv")
 ```
 
 
