@@ -246,16 +246,68 @@ water <- read_csv("data/water_train.csv") |>
   mutate(status_id = factor(status_id)) 
 water_test <- read_csv("data/water_test.csv") 
 
+water_split <- initial_split(water, 2/3, strata=status_id)
+water_tr <- training(water_split)
+water_ts <- testing(water_split)
+
 ```
-```{r}
-water <- water %>% select(-c(is_urban,water_point_population,local_population_1km,distance_to_primary_road,distance_to_tertiary_road,staleness_score))
-```
-
 
 ```{r}
 
+
+# Provides 0.724
 water <- water %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road,distance_to_tertiary_road,staleness_score)
 water_test <- water_test %>% select(-is_urban,water_point_population,local_population_1km,distance_to_primary_road,distance_to_tertiary_road,staleness_score)
+
+water <- water %>% filter(install_year < 2024)
+```
+
+
+
+```{r}
+
+# Provides 0.68
+water <- water %>% select(-c(lat,lon,is_urban,staleness_score,distance_to_primary_road,distance_to_tertiary_road))
+water_test <- water_test %>% select(-c(lat,lon,is_urban,staleness_score,distance_to_primary_road,distance_to_tertiary_road))
+
+water <- water %>% filter(install_year < 2024)
+```
+
+
+```{r}
+
+# Provides 0.68
+water <- water %>% select(-c(lat,lon,is_urban,staleness_score,distance_to_primary_road,distance_to_tertiary_road))
+water_test <- water_test %>% select(-c(lat,lon,is_urban,staleness_score,distance_to_primary_road,distance_to_tertiary_road))
+
+water <- water %>% filter(install_year < 2024)
+```
+
+
+```{r}
+
+# Provides 0.7205
+water <- water %>% select(-c(lat,lon,is_urban))
+water_test <- water_test %>% select(-c(lat,lon,is_urban))
+
+water <- water %>% filter(install_year < 2024)
+```
+
+```{r}
+
+# Provides 0.7205
+water <- water %>% select(-c(lat,lon,is_urban))
+water_test <- water_test %>% select(-c(lat,lon,is_urban))
+
+water <- water %>% filter(install_year < 2024)
+```
+
+
+```{r}
+
+# Provides 
+water <- water %>% select(-c(lat,lon,is_urban,staleness_score))
+water_test <- water_test %>% select(-c(lat,lon,is_urban,staleness_score))
 
 water <- water %>% filter(install_year < 2024)
 ```
@@ -350,7 +402,7 @@ water_test$report_date <- year(water_test$report_date)
 water_ts_pred <- water_test |> 
   bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
   mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
-write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions18.csv")
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions20.csv")
 ```
 
 
