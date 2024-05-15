@@ -434,7 +434,7 @@ final_rf
 
 
 ```{r}
-
+set.seed(1148)
 water$report_date <- year(water$report_date)
 
 rf_fit_tune <- final_rf %>%
@@ -458,8 +458,8 @@ water_ts <- testing(water_split)
 ```{r}
 # Code for fitting model with local variables
 
-water_tr <- water_tr %>% select(-c(lon,lat,is_urban))
-water_ts <- water_ts %>% select(-c(lon,lat,is_urban))
+water_tr <- water_tr %>% select(-c(is_urban))
+water_ts <- water_ts %>% select(-c(is_urban))
 
 water_tr <- water_tr %>% filter(install_year < 2024)
 ```
@@ -517,7 +517,7 @@ water_test$report_date <- year(water_test$report_date)
 water_ts_pred <- water_test |> 
   bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
   mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
-write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions20.csv")
+write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions22.csv")
 ```
 
 
