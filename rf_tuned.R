@@ -84,8 +84,9 @@ rf_folds <- vfold_cv(water[,-1],v = 5) # Use the selection of variables in water
 # 
 # # Choosing the final set of variables and
 # 
-# water <- water %>% select(-c(is_urban))
-# water_test <- water_test %>% select(-c(is_urban))
+# water <- water %>% select(-c(is_urban,lat,lon))
+# water_test <- water_test %>% select(-c(is_urban,lat,lon))
+# 
 # 
 # # Removing junk data
 # 
@@ -93,19 +94,19 @@ rf_folds <- vfold_cv(water[,-1],v = 5) # Use the selection of variables in water
 # 
 # 
 # 
-# fit_rf <- tune_spec |> 
+# fit_rf <- tune_spec |>
 #   fit(status_id ~ ., data = water[,-1])
 # 
 # 
 # 
 # 
-# water_test |> 
-#   bind_cols(predict(fit_rf, new_data=water_test, type="prob")) |> 
-#   mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
-# write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions_new.csv")
-
-
-################################ End ##################################################
+# water_test |>
+#   bind_cols(predict(fit_rf, new_data=water_test, type="prob")) |>
+#   mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y"))
+# write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions.csv")
+# 
+# 
+# ################################ End ##################################################
 
 
 doParallel::registerDoParallel()
@@ -120,7 +121,7 @@ rf_res
 
 
 
-rf_res %>% 
+rf_res %>%
   collect_metrics() %>% head() %>% kbl()
 
 
@@ -138,13 +139,13 @@ final_rf <- finalize_model(
 final_rf
 
 # Random Forest Model Specification (classification)
-# 
+#
 # Main Arguments after tuning :
 #   mtry = 5
 #   trees = 1000
 #   min_n = 2
-# 
-# Computational engine: ranger 
+#
+# Computational engine: ranger
 
 # Changing report date to be just year
 
@@ -168,9 +169,9 @@ rf_fit_tune <- final_rf %>%
 
 # Changing prediction thresholds for "no" as >=0.45
 
-water_test |> 
-  bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
-  mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
+water_test |>
+  bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |>
+  mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y"))
 write_csv(water_ts_pred[,c("ID", "pstatus_id")], file="predictions.csv")
 
 
