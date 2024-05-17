@@ -297,6 +297,9 @@ water_split <- initial_split(water, 2/3, strata=status_id)
 water_tr <- training(water_split)
 water_ts <- testing(water_split)
 
+
+water_tr$crucialness_score <- water_tr$crucialness_score + water_tr$ID
+water_ts$crucialness_score <- water_ts$crucialness_score + water_ts$ID
 ```
 
 ```{r}
@@ -324,8 +327,8 @@ water <- water %>% filter(install_year < 2024)
 ```{r}
 
 # Provides 0.68
-water <- water %>% select(-c(lat,lon,is_urban,staleness_score,distance_to_primary_road,distance_to_tertiary_road))
-water_test <- water_test %>% select(-c(lat,lon,is_urban,staleness_score,distance_to_primary_road,distance_to_tertiary_road))
+water <- water %>% select(-c(lat,lon,is_urban,crucialness_score))
+water_test <- water_test %>% select(-c(lat,lon,is_urban,crucialness_score))
 
 water <- water %>% filter(install_year < 2024)
 ```
@@ -442,6 +445,15 @@ rf_fit_tune <- final_rf %>%
 ```
 
 
+```{r}
+water_test$report_date <-  year(water_test$report_date)
+
+preds <- water_test |> 
+  bind_cols(predict(rf_fit_tune, new_data=water_test, type="prob")) |> 
+  mutate(pstatus_id = if_else(.pred_n >=0.45,"n","y")) 
+write_csv(preds[,c("ID", "pstatus_id")], file="predictions_new_4.csv")
+```
+
 
 ```{r}
 
@@ -481,6 +493,7 @@ rf_fit_tune <- final_rf %>%
 
 
 ```{r}
+library(caret)
 water_ts$report_date <-  year(water_ts$report_date)
 
 preds <- water_ts |> 
