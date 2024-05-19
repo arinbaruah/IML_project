@@ -13,6 +13,10 @@ library(ggplot2)
 library(plotly)
 library(tidymodels)
 ```
+
+
+
+
 ```{r}
 
 draw_confusion_matrix <- function(cm) {
@@ -147,7 +151,7 @@ ggplot(my_sf) +
   geom_sf(fill = "cornsilk", color = "black") +
   geom_point(data = water, aes(x = lon, y = lat,color = status_id,shape = status_id), size = 3,alpha=0.2) +
   theme_minimal() +
-  theme_void() + coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
+  theme_void() #+ coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
 
 ```
 
