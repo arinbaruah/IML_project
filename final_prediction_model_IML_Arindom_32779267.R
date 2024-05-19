@@ -10,6 +10,8 @@ library(tidyverse)
 
 # Name: Arindom Baruah
 # Student ID: 32779267
+# E-mail ID: abar0090@student.monash.edu
+# Kaggle user name: arindombaruah
 
 
 set.seed(1148)
