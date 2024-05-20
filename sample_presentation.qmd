@@ -1,0 +1,88 @@
+---
+title: "Three Interseting Insights from the Water Quality Dataset"
+format: revealjs
+---
+
+```{r}
+library(tidyverse) 
+library(randomForest)
+library(sf)
+library(rnaturalearth)
+library(ggplot2)
+library(plotly)
+library(tidymodels)
+library(ggthemes)
+library(bbplot)
+library(gridExtra)
+```
+
+
+```{r}
+
+set.seed(1148)
+water <- read_csv("data/water_train.csv") |> 
+  mutate(status_id = factor(status_id)) 
+water_test <- read_csv("data/water_test.csv") 
+
+```
+
+```{r}
+#| eval: false
+# Sample data for demonstration
+# You should replace this with your own dataset
+# Example data with latitude and longitude
+
+
+my_sf <- read_sf("data/Africa_Boundaries.shp")
+
+ggplot(my_sf) +
+  geom_sf(fill = "cornsilk", color = "black") +
+  geom_point(data = water, aes(x = lon, y = lat,color = status_id,shape = status_id), size = 3,alpha=0.2) +
+  theme_minimal() +
+  theme_void() #+ coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
+
+```
+
+---
+
+
+```{r}
+reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise(median(water_point_population),
+                                                                           median(local_population_1km)) %>% 
+  pivot_longer(cols = "median(water_point_population)":"median(local_population_1km)",names_to = "population_type",values_to = "population_reach")
+
+ggplot(data = reach,aes(x = `year(report_date)`,y = population_reach,color = status_id)) + geom_line(alpha=0.4) + geom_point() + 
+  facet_wrap(population_type ~ water_tech_category) + theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"))
+```
+
+---
+
+
+
+```{r}
+
+water_tech_long <- water %>% filter(year(report_date) < 2018) %>% pivot_longer( 
+                                          cols = distance_to_primary_road:distance_to_town,
+                                          names_to = "distance_type",
+                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance))
+
+pl1 <- ggplot(data = water_tech_long,aes(y = distance_type , x = distance/1000 )) + geom_boxplot() + facet_grid(~water_tech_category) + labs(title = "Distribution of distances from the water source before 2018") + theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"))
+```
+
+```{r}
+
+water_tech_long <- water %>% filter(year(report_date) >=2018) %>% pivot_longer( 
+                                          cols = distance_to_primary_road:distance_to_town,
+                                          names_to = "distance_type",
+                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance))
+
+pl2 <- ggplot(data = water_tech_long,aes(y = distance_type , x = distance/1000)) + geom_boxplot() + facet_grid(~water_tech_category) + labs(title = "Distribution of distances from the water source in or after 2018") +  theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"))
+```
+
+```{r}
+
+grid.arrange(pl1,pl2,ncol = 1)
+
+```
+
+---

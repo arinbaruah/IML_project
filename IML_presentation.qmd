@@ -2,5 +2,82 @@
 title: "IML Presentation"
 author: "Group 3"
 format: html
+
+execute: 
+  echo: false
+  warning: false
+  message: false
 ---
+
+
+```{r}
+library(tidyverse) 
+library(randomForest)
+library(sf)
+library(rnaturalearth)
+library(ggplot2)
+library(plotly)
+library(tidymodels)
+library(ggthemes)
+library(bbplot)
+```
+
+
+
+
+```{r}
+
+set.seed(1148)
+water <- read_csv("data/water_train.csv") |> 
+  mutate(status_id = factor(status_id)) 
+water_test <- read_csv("data/water_test.csv") 
+
+```
+
+```{r}
+# Sample data for demonstration
+# You should replace this with your own dataset
+# Example data with latitude and longitude
+
+
+my_sf <- read_sf("data/Africa_Boundaries.shp")
+
+ggplot(my_sf) +
+  geom_sf(fill = "cornsilk", color = "black") +
+  geom_point(data = water, aes(x = lon, y = lat,color = status_id,shape = status_id), size = 3,alpha=0.2) +
+  theme_minimal() +
+  theme_void() #+ coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
+
+```
+
+
+```{r}
+reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise(median(water_point_population),
+                                                                           median(local_population_1km)) %>% 
+  pivot_longer(cols = "median(water_point_population)":"median(local_population_1km)",names_to = "population_type",values_to = "population_reach")
+
+pl <- ggplot(data = reach,
+       aes(x = factor(`year(report_date)`), y = population_reach, color = status_id,group = status_id)) + geom_line(alpha =
+                                                                                            0.4) + geom_point() + facet_wrap(population_type ~ water_tech_category) + theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),plot.title = element_text(hjust = 0.5)) +
+  scale_color_manual(values = c("y" = "steelblue", "n" = "darkred")) + labs(x = "Year",y = "Population reach",title = "What amount of the population has benefited \n from the water technology installations?",caption = "Source: Water point data exchange (Wpdx)",color = "Water presence")
+
+pl
+```
+
+
+```{r}
+
+water_tech_long <- water %>% mutate(period = if_else(year(report_date) >=2018,"Post 2018","Pre 2018")) %>% pivot_longer( 
+                                          cols = distance_to_primary_road:distance_to_town,
+                                          names_to = "distance_type",
+                                          values_to = "distance") %>% select(c(water_tech_category,distance_type,distance,period))
+
+water_tech_clean <- water_tech_long %>% mutate(distance_type_clean = case_when(distance_type == "distance_to_primary_road" ~ "Distance to primary road",
+                                               distance_type == "distance_to_secondary_road" ~ "Distance to secondary road",
+                                               distance_type == "distance_to_tertiary_road" ~ "Distance to tertiary road",
+                                               distance_type == "distance_to_city" ~ "Distance to city",
+                                               distance_type == "distance_to_town" ~ "Distance to town"))
+
+ggplot(data = water_tech_clean,aes(y = distance_type_clean , x = distance/1000,color = period)) + geom_boxplot() + facet_grid(period~water_tech_category) + labs(title = "Distribution of distances from the water source \n pre and post 2018",x = "Distance (in Km)",y = "Type of distance measured",caption = "Source: Water point data exchange (Wpdx)") +  theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),legend.position = "none") + scale_color_canva(palette = "Summer inspired")
+```
 
