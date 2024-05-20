@@ -4,3 +4,38 @@ author: "Group 3"
 format: html
 ---
 
+```{r}
+library(tidyverse) 
+library(randomForest)
+library(sf)
+library(rnaturalearth)
+library(ggplot2)
+library(plotly)
+library(tidymodels)
+```
+
+
+```{r}
+
+water <- read_csv("data/water_train.csv") |> 
+  mutate(status_id = factor(status_id)) 
+water_test <- read_csv("data/water_test.csv") 
+
+```
+
+
+
+# Aish's part
+
+
+
+
+# Rin's part
+
+
+
+# Tash's part
+
+
+
+# Alex's part
