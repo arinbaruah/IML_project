@@ -70,7 +70,7 @@ pl
 ```
 # Are the recent installations moving away from the cities and focussing on regional areas ?
 
-- For hand-pumps and public tapstands, the median distance from the cities have increased post 2019. __ This indicates that the recent installations are moving away from the cities, possibly targetting the regional areas.__
+- For hand-pumps and public tapstands, the median distance from the cities have increased post 2019. __This indicates that the recent installations are moving away from the cities, possibly targetting the regional areas.__
 
 - On the other hand, we see that the median distance for motorised pumps lie around the 25 km mark for the recent as well as the previous installations. __This indicates that the recent motorised pump installations are still close to the cities__, due to which the water point and local population within 1 km is on the rise.
 
