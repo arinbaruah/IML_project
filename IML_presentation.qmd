@@ -49,25 +49,34 @@ ggplot(my_sf) +
   theme_void() #+ coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
 
 ```
+# What amount of population has benefitted from the water technology installations ?
+
+- The median local population within 1 km and water point populations for hand pumps and public tapstands dropped after 2018 while it was on the rise for motorised pumps for the same period.
+
+- Does that mean the installations are happening away from the cities where the general population is much lower ?
+
 
 
 ```{r}
-reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise(median(water_point_population),
-                                                                           median(local_population_1km)) %>% 
-  pivot_longer(cols = "median(water_point_population)":"median(local_population_1km)",names_to = "population_type",values_to = "population_reach")
+reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise("Median water point population" = median(water_point_population), "Median local population (1 km)" = median(local_population_1km)) %>% 
+  pivot_longer(cols = "Median water point population":"Median local population (1 km)",names_to = "population_type",values_to = "population_reach")
 
 pl <- ggplot(data = reach,
        aes(x = factor(`year(report_date)`), y = population_reach, color = status_id,group = status_id)) + geom_line(alpha =
-                                                                                            0.4) + geom_point() + facet_wrap(population_type ~ water_tech_category) + theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),plot.title = element_text(hjust = 0.5)) +
-  scale_color_manual(values = c("y" = "steelblue", "n" = "darkred")) + labs(x = "Year",y = "Population reach",title = "What amount of the population has benefited \n from the water technology installations?",caption = "Source: Water point data exchange (Wpdx)",color = "Water presence")
+                                                                                            0.4) + geom_point() + facet_wrap(population_type ~ water_tech_category) + theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),plot.title = element_text(hjust = 0.5),legend.text = element_text(size = 6),legend.title = element_text(size = 7)) +
+  scale_color_manual(values = c("y" = "steelblue", "n" = "darkred")) + labs(x = "Report Year",y = "Population reach",title = "What amount of the population has benefited \n from the water technology installations?",caption = "Source: Water point data exchange (Wpdx)",color = "Water presence")
 
 pl
 ```
+# Are the recent installations moving away from the cities and focussing on regional areas ?
 
+- For hand-pumps and public tapstands, the median distance from the cities have increased post 2019. __ This indicates that the recent installations are moving away from the cities, possibly targetting the regional areas.__
+
+- On the other hand, we see that the median distance for motorised pumps lie around the 25 km mark for the recent as well as the previous installations. __This indicates that the recent motorised pump installations are still close to the cities__, due to which the water point and local population within 1 km is on the rise.
 
 ```{r}
 
-water_tech_long <- water %>% mutate(period = if_else(year(report_date) >=2018,"Post 2018","Pre 2018")) %>% pivot_longer( 
+water_tech_long <- water %>% mutate(period = if_else(year(report_date) >=2019,"Post 2019","Pre 2019")) %>% pivot_longer( 
                                           cols = distance_to_primary_road:distance_to_town,
                                           names_to = "distance_type",
                                           values_to = "distance") %>% select(c(water_tech_category,distance_type,distance,period))
@@ -78,6 +87,6 @@ water_tech_clean <- water_tech_long %>% mutate(distance_type_clean = case_when(d
                                                distance_type == "distance_to_city" ~ "Distance to city",
                                                distance_type == "distance_to_town" ~ "Distance to town"))
 
-ggplot(data = water_tech_clean,aes(y = distance_type_clean , x = distance/1000,color = period)) + geom_boxplot() + facet_grid(period~water_tech_category) + labs(title = "Distribution of distances from the water source \n pre and post 2018",x = "Distance (in Km)",y = "Type of distance measured",caption = "Source: Water point data exchange (Wpdx)") +  theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),legend.position = "none") + scale_color_canva(palette = "Summer inspired")
+ggplot(data = water_tech_clean,aes(y = distance_type_clean , x = distance/1000,color = period)) + geom_boxplot() + facet_grid(period~water_tech_category) + labs(title = "Distribution of distances from the water source \n pre and post 2019",x = "Distance (in Km)",y = "Type of distance measured",caption = "Source: Water point data exchange (Wpdx)") +  theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),legend.position = "none") + scale_color_canva(palette = "Summer inspired")
 ```
 
