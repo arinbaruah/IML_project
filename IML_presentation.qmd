@@ -182,7 +182,7 @@ map
 ```
 
 
-# 2. Temporal analysis: Are the recent installations moving away from the cities and focussing on regional areas ?
+# 2. Temporal analysis: Are the recent installations moving away from the cities and focusing on regional areas ?
 
 - The median local population within 1 km and water point populations for hand pumps and public tapstands __dropped after 2019 while it was on the rise for motorised pumps for the same period.__
 
