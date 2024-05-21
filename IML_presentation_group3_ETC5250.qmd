@@ -218,7 +218,7 @@ water_tech_clean <- water_tech_long %>% mutate(distance_type_clean = case_when(d
                                                distance_type == "distance_to_city" ~ "Distance to city",
                                                distance_type == "distance_to_town" ~ "Distance to town"))
 
-ggplot(data = water_tech_clean,aes(y = distance_type_clean , x = distance/1000,color = period)) + geom_boxplot() + facet_grid(period~water_tech_category) + labs(title = "Distribution of distances from the water source \n pre and post 2019",x = "Distance (in Km)",y = "Type of distance measured",caption = "Source: Water point data exchange (Wpdx)") +  theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),legend.position = "none") + scale_color_canva(palette = "Summer inspired")
+ggplot(data = water_tech_clean %>% filter(distance_type == "distance_to_city"),aes(y = distance_type_clean , x = distance/1000,color = period)) + geom_boxplot() + facet_grid(period~water_tech_category) + labs(title = "Distribution of distances from the water source \n pre and post 2019",x = "Distance (in Km)",y = "Distance type",caption = "Source: Water point data exchange (Wpdx)") +  theme_minimal() + theme(axis.text.x = element_text(angle = 45),plot.background = element_rect(fill = "cornsilk"),legend.position = "none") + scale_color_canva(palette = "Summer inspired")
 ```
 
 
