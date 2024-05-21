@@ -244,9 +244,117 @@ ggplot(data = water_tech_clean,aes(y = distance_type_clean , x = distance/1000,c
 ```
 
 
+## Are there differences in predictions depending on models?
+
+We found interesting differences in predictions for certain features between XGBoost and Randomforest Models:
+
+```{r}
+rf_pred <- read_csv("data/final_prediction.csv")
+boost_pred <- read_csv("data/xgboost_predictions_int.csv")
+
+rf_merged_df <- merge(rf_pred, water_test, by = "ID", all.x = TRUE)
+merged_df_boost <- merge(boost_pred, water_test, by = "ID", all.x = TRUE)
+```
+
+
 # Tash's part
+
+# Distribution of Water Availability Predictions across Installation Years
+
+•⁠  ⁠XGboost predicted higher counts of Y in the peak period of installation of water points than RF
+•⁠  ⁠RF predicted higher counts of N in the peak period of water point installations than XGboost
+
+```{r}
+install_year_distribution <- rf_merged_df |>
+  group_by(pstatus_id, install_year) |>
+  summarise(count = n()) |>
+  ungroup()
+
+install_year_distribution_boost <- merged_df_boost |>
+  group_by(pstatus_id, install_year) |>
+  summarise(count = n()) |>
+  ungroup()
+
+
+# RANDOMFOREST plot
+install_plotly <- ggplot(install_year_distribution, aes(x = install_year, y = count, color = paste("Random Forest -", pstatus_id))) +
+  geom_line() +
+  scale_color_manual(values = c("Random Forest - y" = "seagreen3", "Random Forest - n" = "tomato")) +
+  labs(
+    title = "RANDOMFOREST: Water Availability Predictions Across Installation Year",
+    x = "Installation Year",
+    y = "Count",
+    color = "Water Availability Prediction"
+  ) +
+  theme_minimal()
+
+p_plotly <- ggplotly(install_plotly)
+
+# XGBOOSTED plot
+install_plotly_boosted <- ggplot(install_year_distribution_boost, aes(x = install_year, y = count, color = paste("XGBoosted -", pstatus_id))) +
+  geom_line() +
+  scale_color_manual(values = c("XGBoosted - y" = "lightblue", "XGBoosted - n" = "red")) +
+  labs(
+    title = "XGBOOSTED: Water Availability Predictions Across Installation Year",
+    x = "Installation Year",
+    y = "Count",
+    color = "Water Availability Prediction"
+  ) +
+  theme_minimal()
+
+p_plotly_boost <- ggplotly(install_plotly_boosted)
+
+# Combining the plots 
+combined_plot <- subplot(p_plotly, p_plotly_boost) %>%
+  layout(
+    title = "Distribution of Water Availability Across Installation Years",
+    legend = list(x = 0.5, y = -0.2, orientation = "h", xanchor = "center")  
+  )
+
+combined_plot
+```
 
 
 
 # Alex's part
+
+# Distribution of Water Availability Predictions across Water Technology Categories
+
+•⁠ ⁠Both models predict high availability ('y') for hand pumps, XGBoost predicting even higher than RF.
+• Noticeable difference in predictions for motorized pumps, XGBoost predicted higher 'y' and RF predicted higher 'n'.
+
+
+```{r}
+# water tech categories and random forest model
+rf_p <- ggplot(rf_merged_df, aes(fill=paste("Random Forest -", pstatus_id), x=water_tech_category)) + 
+    geom_bar(position="dodge") +
+    scale_fill_manual(values=c("Random Forest - y" = "seagreen3", "Random Forest - n" = "tomato")) +
+    theme_minimal() +
+    labs(x="Water Technology Categories", 
+         y="Count", 
+         fill="Water Availability Predictions") +
+    ggtitle("Distribution of Water Availability across Water Technology Categories in Central Africa") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Convert to plotly
+rf_plotly <- ggplotly(rf_p)
+
+# water tech categories and xgboost
+
+xgboost_p <- ggplot(merged_df_boost, aes(fill=paste("Boosted Tree -", pstatus_id), x=water_tech_category)) + 
+    geom_bar(position="dodge") +
+    scale_fill_manual(values=c("Boosted Tree - y" = "steelblue", "Boosted Tree - n" = "firebrick")) +
+    theme_minimal() +
+    labs(x="Water Technology Categories", 
+         y="Count", 
+         fill="Water Availability Predictions") +
+    ggtitle("Distribution of Water Availability across Water Technology Categories in Central Africa") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Convert to plotly
+xgboost_plotly <- ggplotly(xgboost_p)
+
+# combining the plots
+subplot(rf_plotly, xgboost_plotly, nrows = 2)
+```
 
