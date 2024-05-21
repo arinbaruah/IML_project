@@ -242,9 +242,9 @@ ggplot(data = water_tech_clean,aes(y = distance_type_clean , x = distance/1000,c
 ```
 
 
-## Are there differences in predictions depending on models?
+# 3. Model Impact: How Random Forests and Boosted Trees Diverge in Predictions
 
-We found interesting differences in predictions for certain features between XGBoost and Randomforest Models:
+We've uncovered interesting differences in predictions for certain features between XGBoost and Random Forest models:
 
 ```{r}
 rf_pred <- read_csv("data/final_prediction.csv")
@@ -255,10 +255,11 @@ merged_df_boost <- merge(boost_pred, water_test, by = "ID", all.x = TRUE)
 ```
 
 
-# Distribution of Water Availability Predictions across Installation Years
+### Distribution of Water Availability Predictions across Installation Years
 
-•⁠  ⁠XGboost predicted higher counts of Y in the peak period of installation of water points than RF
-•⁠  ⁠RF predicted higher counts of N in the peak period of water point installations than XGboost
+- ⁠XGboost predicted higher counts of Y in the peak period of installation of water points than RF
+
+- ⁠RF predicted higher counts of N in the peak period of water point installations than XGboost
 
 ```{r}
 install_year_distribution <- rf_merged_df |>
@@ -312,10 +313,11 @@ combined_plot
 
 
 
-# Distribution of Water Availability Predictions across Water Technology Categories
+### Distribution of Water Availability Predictions across Water Technology Categories
 
-•⁠ ⁠Both models predict high availability ('y') for hand pumps, XGBoost predicting even higher than RF.
-• Noticeable difference in predictions for motorized pumps, XGBoost predicted higher 'y' and RF predicted higher 'n'.
+- ⁠Both models predict high availability ('y') for hand pumps, XGBoost predicting even higher than RF.
+
+- Noticeable difference in predictions for motorized pumps, XGBoost predicted higher 'y' and RF predicted higher 'n'.
 
 
 ```{r}
@@ -327,7 +329,7 @@ rf_p <- ggplot(rf_merged_df, aes(fill=paste("Random Forest -", pstatus_id), x=wa
     labs(x="Water Technology Categories", 
          y="Count", 
          fill="Water Availability Predictions") +
-    ggtitle("Distribution of Water Availability across Water Technology Categories in Central Africa") +
+    ggtitle("Distribution of Water Availability \n across Water Technology Categories") +
   theme(plot.title = element_text(hjust = 0.5))
 
 # Convert to plotly
@@ -342,7 +344,7 @@ xgboost_p <- ggplot(merged_df_boost, aes(fill=paste("Boosted Tree -", pstatus_id
     labs(x="Water Technology Categories", 
          y="Count", 
          fill="Water Availability Predictions") +
-    ggtitle("Distribution of Water Availability across Water Technology Categories in Central Africa") +
+    ggtitle("Distribution of Water Availability across Water Technology Categories") +
   theme(plot.title = element_text(hjust = 0.5))
 
 # Convert to plotly
