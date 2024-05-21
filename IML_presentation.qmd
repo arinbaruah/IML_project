@@ -1,12 +1,12 @@
 ---
-title: "Three Interseting Insights from the Water Dataset"
-author: "Aishwarya,Arindom,Tashya,Alexandra"
+title: "Three Interesting Insights from the Water Dataset"
+author: "Group 3: Aishwarya,Arindom,Tashya,Alexandra"
 format: html
-
 execute: 
   echo: false
   warning: false
   message: false
+  
 ---
 
 
@@ -23,11 +23,6 @@ library(ggthemes)
 ```
 
 
-
-
-
-
-
 ```{r}
 
 water <- read_csv("data/water_train.csv") |> 
@@ -36,7 +31,10 @@ water_test <- read_csv("data/water_test.csv")
 
 ```
 
-## Which category of water technology caters to the most number of people?
+# 1. Spatial analysis: Most Popular Water Technologies in Populous Areas 
+
+
+- Spatial analysis of the data indicated that __the motorised pumps were the commonly used water technology in the high population density regions (20000 or above).__
 
 ```{r}
 
@@ -146,16 +144,6 @@ for (category in unique(water_filtered$water_tech_category)) {
   }
 }
 
-# Add legend for population density
-map <- map %>%
-  addLegend(
-    "bottomright", 
-    colors = colors,
-    labels = c("0-500", "501-1000", "1001-5000", "5001-10000", "10001-20000", "20001+"),
-    title = "Total Water Point Population",
-    opacity = 1
-  )
-
 # Function to create dummy SVG icons for the legend
 legendSVG <- function(shape) {
   if (shape == "triangle") {
@@ -194,15 +182,13 @@ map
 ```
 
 
-## What amount of population has benefitted from the water technology installations ?
+# 2. Temporal analysis: Are the recent installations moving away from the cities and focussing on regional areas ?
 
-<div style="border: 2px solid #4CAF50; border-radius: 5px; background-color: #DFF0D8; padding: 15px; margin: 20px 0;">
+- The median local population within 1 km and water point populations for hand pumps and public tapstands __dropped after 2019 while it was on the rise for motorised pumps for the same period.__
 
-- The median local population within 1 km and water point populations for hand pumps and public tapstands __dropped after 2018 while it was on the rise for motorised pumps for the same period.__
+- For hand-pumps and public tapstands, the median distance from the cities have increased post 2019. __This indicates that the recent installations are moving away from the cities, possibly targeting the regional areas.__ On the other hand, we see that the median distance for motorised pumps lie around the 25 km mark for the recent as well as the previous installations. __This indicates that the recent motorised pump installations are still close to the cities__
 
-- Does that mean the installations are happening away from the cities where the general population is much lower ?
 
-</div>
 
 ```{r}
 reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise("Median water point population" = median(water_point_population), "Median local population (1 km)" = median(local_population_1km)) %>% 
@@ -215,15 +201,9 @@ pl <- ggplot(data = reach,
 
 pl
 ```
-## Are the recent installations moving away from the cities and focussing on regional areas ?
 
-<div style="border: 2px solid #4CAF50; border-radius: 5px; background-color: #DFF0D8; padding: 15px; margin: 20px 0;">
 
-- For hand-pumps and public tapstands, the median distance from the cities have increased post 2019. __This indicates that the recent installations are moving away from the cities, possibly targetting the regional areas.__
 
-- On the other hand, we see that the median distance for motorised pumps lie around the 25 km mark for the recent as well as the previous installations. __This indicates that the recent motorised pump installations are still close to the cities__, due to which the water point and local population within 1 km is on the rise.
-
-</div>
 
 ```{r}
 
@@ -258,7 +238,6 @@ merged_df_boost <- merge(boost_pred, water_test, by = "ID", all.x = TRUE)
 ### Distribution of Water Availability Predictions across Installation Years
 
 - ⁠XGboost predicted higher counts of Y in the peak period of installation of water points than RF
-
 - ⁠RF predicted higher counts of N in the peak period of water point installations than XGboost
 
 ```{r}
@@ -316,7 +295,6 @@ combined_plot
 ### Distribution of Water Availability Predictions across Water Technology Categories
 
 - ⁠Both models predict high availability ('y') for hand pumps, XGBoost predicting even higher than RF.
-
 - Noticeable difference in predictions for motorized pumps, XGBoost predicted higher 'y' and RF predicted higher 'n'.
 
 
