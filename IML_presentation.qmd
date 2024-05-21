@@ -34,21 +34,10 @@ water_test <- read_csv("data/water_test.csv")
 
 ```
 
-```{r}
-# Sample data for demonstration
-# You should replace this with your own dataset
-# Example data with latitude and longitude
 
 
-my_sf <- read_sf("data/Africa_Boundaries.shp")
 
-ggplot(my_sf) +
-  geom_sf(fill = "cornsilk", color = "black") +
-  geom_point(data = water, aes(x = lon, y = lat,color = status_id,shape = status_id), size = 3,alpha=0.2) +
-  theme_minimal() +
-  theme_void() #+ coord_sf(xlim = c(14.43, 35.45), ylim = c(2.22, 20))
 
-```
 # What amount of population has benefitted from the water technology installations ?
 
 - The median local population within 1 km and water point populations for hand pumps and public tapstands dropped after 2018 while it was on the rise for motorised pumps for the same period.
