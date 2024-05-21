@@ -36,9 +36,6 @@ water_test <- read_csv("data/water_test.csv")
 
 ```
 
-
-# Aish's part
-
 ## Which category of water technology caters to the most number of people?
 
 ```{r}
@@ -47,7 +44,6 @@ library(leaflet)
 library(dplyr)
 library(sf)
 library(base64enc)
-
 
 # Filter out rows with invalid coordinates
 water <- water %>%
@@ -73,9 +69,9 @@ assign_color <- function(x) {
 customSVG <- function(shape, color) {
   if (shape == "triangle") {
     return(paste0(
-      "data:image/svg+xml;base64,", base64encode(charToRaw(
+      "data:image/svg+xml;base64,", base64enc::base64encode(charToRaw(
         paste0(
-          "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>",
+          "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'>",
           "<polygon points='12,0 24,24 0,24' style='fill:", color, ";' />",
           "</svg>"
         )
@@ -83,9 +79,9 @@ customSVG <- function(shape, color) {
     ))
   } else if (shape == "square") {
     return(paste0(
-      "data:image/svg+xml;base64,", base64encode(charToRaw(
+      "data:image/svg+xml;base64,", base64enc::base64encode(charToRaw(
         paste0(
-          "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>",
+          "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'>",
           "<rect width='24' height='24' style='fill:", color, ";' />",
           "</svg>"
         )
@@ -93,9 +89,9 @@ customSVG <- function(shape, color) {
     ))
   } else {
     return(paste0(
-      "data:image/svg+xml;base64,", base64encode(charToRaw(
+      "data:image/svg+xml;base64,", base64enc::base64encode(charToRaw(
         paste0(
-          "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>",
+          "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'>",
           "<circle cx='12' cy='12' r='12' style='fill:", color, ";' />",
           "</svg>"
         )
@@ -129,7 +125,7 @@ for (category in unique(water_filtered$water_tech_category)) {
       fillColor = ~assign_color(water_point_population),
       fillOpacity = 1,
       color = "black",
-      radius = 4,
+      radius = 2, # Reduced size
       stroke = TRUE,
       weight = 1,
       label = ~water_tech_category,
@@ -138,7 +134,7 @@ for (category in unique(water_filtered$water_tech_category)) {
   } else {
     for (i in seq_len(nrow(data_subset))) {
       svg_icon <- customSVG(shape, assign_color(data_subset$water_point_population[i]))
-      icon <- makeIcon(iconUrl = svg_icon, iconWidth = 10, iconHeight = 10)
+      icon <- makeIcon(iconUrl = svg_icon, iconWidth = 6, iconHeight = 6) # Reduced size
       map <- map %>% addMarkers(
         lng = st_coordinates(data_subset)[i,1],
         lat = st_coordinates(data_subset)[i,2],
@@ -164,19 +160,19 @@ map <- map %>%
 legendSVG <- function(shape) {
   if (shape == "triangle") {
     return(paste0(
-      "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>",
+      "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'>",
       "<polygon points='12,0 24,24 0,24' style='fill:black;' />",
       "</svg>"
     ))
   } else if (shape == "square") {
     return(paste0(
-      "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>",
+      "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'>",
       "<rect width='24' height='24' style='fill:black;' />",
       "</svg>"
     ))
   } else {
     return(paste0(
-      "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>",
+      "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'>",
       "<circle cx='12' cy='12' r='12' style='fill:black;' />",
       "</svg>"
     ))
@@ -185,7 +181,7 @@ legendSVG <- function(shape) {
 
 # Create legend items for shapes
 shape_legend <- lapply(names(shapes), function(cat) {
-  htmltools::HTML(paste0("<div style='display: inline-block; width: 24px; height: 24px;'>", legendSVG(shapes[[cat]]), "</div> ", cat))
+  htmltools::HTML(paste0("<div style='display: inline-block; width: 12px; height: 12px;'>", legendSVG(shapes[[cat]]), "</div> ", cat))
 })
 
 # Add legend for shapes
@@ -195,20 +191,18 @@ map <- map %>%
 # Display the map
 map
 
-
 ```
 
 
-
-# Rin's part
-
 ## What amount of population has benefitted from the water technology installations ?
 
-- The median local population within 1 km and water point populations for hand pumps and public tapstands dropped after 2018 while it was on the rise for motorised pumps for the same period.
+<div style="border: 2px solid #4CAF50; border-radius: 5px; background-color: #DFF0D8; padding: 15px; margin: 20px 0;">
+
+- The median local population within 1 km and water point populations for hand pumps and public tapstands __dropped after 2018 while it was on the rise for motorised pumps for the same period.__
 
 - Does that mean the installations are happening away from the cities where the general population is much lower ?
 
-
+</div>
 
 ```{r}
 reach <- water %>% group_by(year(report_date),water_tech_category,status_id) %>% summarise("Median water point population" = median(water_point_population), "Median local population (1 km)" = median(local_population_1km)) %>% 
@@ -223,9 +217,13 @@ pl
 ```
 ## Are the recent installations moving away from the cities and focussing on regional areas ?
 
+<div style="border: 2px solid #4CAF50; border-radius: 5px; background-color: #DFF0D8; padding: 15px; margin: 20px 0;">
+
 - For hand-pumps and public tapstands, the median distance from the cities have increased post 2019. __This indicates that the recent installations are moving away from the cities, possibly targetting the regional areas.__
 
 - On the other hand, we see that the median distance for motorised pumps lie around the 25 km mark for the recent as well as the previous installations. __This indicates that the recent motorised pump installations are still close to the cities__, due to which the water point and local population within 1 km is on the rise.
+
+</div>
 
 ```{r}
 
@@ -256,8 +254,6 @@ rf_merged_df <- merge(rf_pred, water_test, by = "ID", all.x = TRUE)
 merged_df_boost <- merge(boost_pred, water_test, by = "ID", all.x = TRUE)
 ```
 
-
-# Tash's part
 
 # Distribution of Water Availability Predictions across Installation Years
 
@@ -315,8 +311,6 @@ combined_plot
 ```
 
 
-
-# Alex's part
 
 # Distribution of Water Availability Predictions across Water Technology Categories
 
